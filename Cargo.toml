@@ -1,0 +1,14 @@
+[package]
+name = "insiculous_snake"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+# `cargo run --features editor` runs the game inside the scene editor
+# (dockable panels, inspector, play/pause/stop, collider overlay).
+editor = ["dep:editor_integration"]
+
+[dependencies]
+engine_core = { path = "../../insiculous_2d/crates/engine_core" }
+editor_integration = { path = "../../insiculous_2d/crates/editor_integration", optional = true }
+glam = { version = "0.30.10", features = ["serde"] }
