@@ -9,14 +9,38 @@ pub(crate) enum GameState {
     ModeSelect { selection: u8 },
     Achievements,
     Playing,
-    GameOver { cause: DeathCause },
+    GameOver { result: GameResult },
 }
 
-/// What killed the snake — the game-over overlay names the culprit.
+/// How many snakes share the grid and where their input comes from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum GameMode {
+    /// One snake driven by both players' controls (WASD + arrows + either pad).
+    SinglePlayer,
+    /// Two snakes on one grid; first death ends the round.
+    TwoPlayerVersus,
+}
+
+/// What killed a snake — the game-over overlay names the culprit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DeathCause {
     Wall,
     SelfBite,
+    /// Ran into the other snake's body.
+    OtherSnake,
+    /// Both heads targeted the same cell — a mutual head-on.
+    HeadOn,
+}
+
+/// The outcome of a finished round. Single-player rounds are always `Solo`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum GameResult {
+    /// A single-player death by the given cause.
+    Solo(DeathCause),
+    /// A versus round won by `player` (1-based); the loser died by `loser_cause`.
+    Winner { player: u8, loser_cause: DeathCause },
+    /// A versus round where both snakes died on the same tick.
+    Draw,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -55,15 +79,48 @@ pub(crate) struct Food {
     pub(crate) entity: EntityId,
 }
 
-pub(crate) struct SnakeGame {
-    /// Snake body cells, head at the front. The single source of truth —
-    /// segment sprites are repositioned from this every tick.
+/// One snake's complete state. Single-player uses `snakes[0]`; versus adds a
+/// second. `cells` is the source of truth — segment sprites are repositioned
+/// from it every tick.
+pub(crate) struct SnakeState {
+    /// Snake body cells, head at the front.
     pub(crate) cells: VecDeque<IVec2>,
     /// Segment sprites, index-parallel to `cells` (0 = head, grows at tail).
     pub(crate) segments: Vec<EntityId>,
     pub(crate) direction: Direction,
     /// Turns waiting to apply, one per tick (capped at `INPUT_QUEUE_CAP`).
     pub(crate) input_queue: VecDeque<Direction>,
+    pub(crate) score: u32,
+    pub(crate) foods_eaten: u32,
+    /// Seconds since this snake last ate (QUICK_SNACK tracking).
+    pub(crate) since_last_eat: f32,
+    /// Cleared the tick this snake dies; a dead snake's cells stay on screen.
+    pub(crate) alive: bool,
+    /// Segment tint — the theme accent for snake 0, `SNAKE2_COLOR` for snake 1.
+    pub(crate) color: Vec4,
+}
+
+impl SnakeState {
+    pub(crate) fn new(color: Vec4) -> Self {
+        Self {
+            cells: VecDeque::new(),
+            segments: Vec::new(),
+            direction: Direction::Right,
+            input_queue: VecDeque::new(),
+            score: 0,
+            foods_eaten: 0,
+            since_last_eat: 0.0,
+            alive: true,
+            color,
+        }
+    }
+}
+
+pub(crate) struct SnakeGame {
+    /// One or two snakes sharing the grid (length depends on `mode`).
+    pub(crate) snakes: Vec<SnakeState>,
+    pub(crate) mode: GameMode,
+    /// Food pellets shared by every snake on the board.
     pub(crate) foods: Vec<Food>,
     /// Wall frame around the playfield (dimmed in wrap-around modes).
     pub(crate) walls: Vec<EntityId>,
@@ -73,10 +130,6 @@ pub(crate) struct SnakeGame {
 
     /// Seconds until the next grid step.
     pub(crate) tick_timer: f32,
-    pub(crate) score: u32,
-    pub(crate) foods_eaten: u32,
-    /// Seconds since the last food was eaten (QUICK_SNACK tracking).
-    pub(crate) since_last_eat: f32,
 
     pub(crate) state: GameState,
     pub(crate) chaos_mode: ChaosMode,
@@ -91,18 +144,13 @@ pub(crate) struct SnakeGame {
 impl Default for SnakeGame {
     fn default() -> Self {
         Self {
-            cells: VecDeque::new(),
-            segments: Vec::new(),
-            direction: Direction::Right,
-            input_queue: VecDeque::new(),
+            snakes: Vec::new(),
+            mode: GameMode::SinglePlayer,
             foods: Vec::new(),
             walls: Vec::new(),
             background: None,
             tex_id: 0,
             tick_timer: 0.0,
-            score: 0,
-            foods_eaten: 0,
-            since_last_eat: 0.0,
             state: GameState::TitleScreen { selection: 0 },
             chaos_mode: ChaosMode::Normal,
             frame_count: 0,

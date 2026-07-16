@@ -18,7 +18,7 @@ impl SnakeGame {
 
         ctx.ui.label_centered("INSICULOUS SNAKE", Vec2::new(cx, 150.0));
 
-        let items = ["Play", "Achievements"];
+        let items = ["1 Player", "2 Player Versus", "Achievements"];
         for (i, item) in items.iter().enumerate() {
             let prefix = if i as u8 == selection { "> " } else { "  " };
             ctx.ui.label_centered(&format!("{prefix}{item}"), Vec2::new(cx, 240.0 + i as f32 * 30.0));
@@ -106,11 +106,7 @@ impl SnakeGame {
         let cx = ctx.window_size.x / 2.0;
         let cy = ctx.window_size.y / 2.0;
 
-        ctx.ui.label(&format!("SCORE {}", self.score), Vec2::new(40.0, 16.0));
-        ctx.ui.label(
-            &format!("LENGTH {}", self.cells.len()),
-            Vec2::new(ctx.window_size.x - 140.0, 16.0),
-        );
+        self.draw_hud(ctx);
 
         let theme = ChaosTheme::for_mode(self.chaos_mode);
         if let Some(banner) = theme.banner_text {
@@ -118,18 +114,67 @@ impl SnakeGame {
             ctx.ui.label_centered_styled(banner, Vec2::new(cx, ctx.window_size.y - 24.0), color, 16.0);
         }
 
-        if let GameState::GameOver { cause } = &self.state {
-            let msg = match cause {
-                DeathCause::Wall => "THE WALL WON",
-                DeathCause::SelfBite => "YOU ATE YOURSELF",
-            };
-            ctx.ui.label_centered(msg, Vec2::new(cx, cy - 60.0));
-            ctx.ui.label_centered(
-                &format!("Final score: {}  -  length {}", self.score, self.cells.len()),
-                Vec2::new(cx, cy - 34.0),
-            );
-            ctx.ui.label_centered("SPACE to play again", Vec2::new(cx, cy - 8.0));
-            ctx.ui.label_centered("ESC for title screen", Vec2::new(cx, cy + 18.0));
+        if let GameState::GameOver { result } = &self.state {
+            self.draw_game_over(ctx, cx, cy, result);
         }
+    }
+
+    /// Top HUD: a single score + length in solo, both players' stats in versus.
+    fn draw_hud(&self, ctx: &mut GameContext) {
+        match self.mode {
+            GameMode::SinglePlayer => {
+                let (score, length) = self.snakes.first()
+                    .map(|s| (s.score, s.cells.len()))
+                    .unwrap_or((0, 0));
+                ctx.ui.label(&format!("SCORE {score}"), Vec2::new(40.0, 16.0));
+                ctx.ui.label(
+                    &format!("LENGTH {length}"),
+                    Vec2::new(ctx.window_size.x - 140.0, 16.0),
+                );
+            }
+            GameMode::TwoPlayerVersus => {
+                if let Some(s) = self.snakes.first() {
+                    ctx.ui.label(
+                        &format!("P1  {}  LEN {}", s.score, s.cells.len()),
+                        Vec2::new(40.0, 16.0),
+                    );
+                }
+                if let Some(s) = self.snakes.get(1) {
+                    ctx.ui.label(
+                        &format!("P2  {}  LEN {}", s.score, s.cells.len()),
+                        Vec2::new(ctx.window_size.x - 200.0, 16.0),
+                    );
+                }
+            }
+        }
+    }
+
+    fn draw_game_over(&self, ctx: &mut GameContext, cx: f32, cy: f32, result: &GameResult) {
+        let title: String = match result {
+            GameResult::Solo(cause) => match cause {
+                DeathCause::Wall => "THE WALL WON".into(),
+                DeathCause::SelfBite => "YOU ATE YOURSELF".into(),
+                DeathCause::OtherSnake | DeathCause::HeadOn => "GAME OVER".into(),
+            },
+            GameResult::Winner { player, .. } => format!("PLAYER {player} WINS"),
+            GameResult::Draw => "DRAW".into(),
+        };
+        let detail = match self.mode {
+            GameMode::SinglePlayer => {
+                let (score, length) = self.snakes.first()
+                    .map(|s| (s.score, s.cells.len()))
+                    .unwrap_or((0, 0));
+                format!("Final score: {score}  -  length {length}")
+            }
+            GameMode::TwoPlayerVersus => {
+                let p1 = self.snakes.first().map(|s| s.score).unwrap_or(0);
+                let p2 = self.snakes.get(1).map(|s| s.score).unwrap_or(0);
+                format!("P1 {p1}    -    P2 {p2}")
+            }
+        };
+        ctx.ui.label_centered(&title, Vec2::new(cx, cy - 60.0));
+        ctx.ui.label_centered(&detail, Vec2::new(cx, cy - 34.0));
+        ctx.ui.label_centered("SPACE to play again", Vec2::new(cx, cy - 8.0));
+        ctx.ui.label_centered("ESC for title screen", Vec2::new(cx, cy + 18.0));
     }
 }

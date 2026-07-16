@@ -35,6 +35,8 @@ pub(crate) const FOOD_POINTS: u32 = 10;
 
 // --- Look ---
 pub(crate) const FOOD_COLOR: Vec4 = Vec4::new(1.0, 0.35, 0.55, 1.0);
+/// Player 2's snake tint in versus (player 1 wears the chaos-mode accent).
+pub(crate) const SNAKE2_COLOR: Vec4 = Vec4::new(0.30, 0.90, 1.0, 1.0);
 pub(crate) const HEAD_EMISSIVE: f32 = 1.6;
 pub(crate) const BODY_EMISSIVE: f32 = 0.9;
 pub(crate) const FOOD_EMISSIVE: f32 = 2.2;

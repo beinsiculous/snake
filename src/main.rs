@@ -60,7 +60,8 @@ fn main() {
         .with_clear_color(0.0, 0.0, 0.0, 1.0)
         .with_fps(60)
         .with_asset_base_path(root.join("assets").to_string_lossy())
-        .with_achievement_save_path(root.join("saves/snake_achievements.json").to_string_lossy());
+        .with_achievement_save_path(root.join("saves/snake_achievements.json").to_string_lossy())
+        .with_input_settings_path(root.join("saves/input_settings.json").to_string_lossy());
 
     // With `--features editor` the game runs inside the scene editor
     // (hierarchy, inspector, gizmos, play/pause/stop, collider overlay);

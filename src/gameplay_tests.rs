@@ -8,10 +8,11 @@ use glam::IVec2;
 
 use crate::constants::*;
 use crate::gameplay::{
-    food_count, next_direction, place_food, step_snake, tick_interval, walls_wrap, StepOutcome,
+    food_count, next_direction, place_food, resolve_versus_step, starting_body, step_snake,
+    tick_interval, versus_result, versus_spawn, walls_wrap, StepOutcome, VersusStep,
 };
 use crate::menu::mode_hint;
-use crate::types::{DeathCause, Direction};
+use crate::types::{DeathCause, Direction, GameResult};
 
 fn snake(cells: &[(i32, i32)]) -> VecDeque<IVec2> {
     cells.iter().map(|&(x, y)| IVec2::new(x, y)).collect()
@@ -228,4 +229,123 @@ fn starting_snake_fits_the_field_heading_right() {
         assert!(crate::spawning::in_bounds(IVec2::new(head.x - i, head.y)));
     }
     assert!(head.x + 3 < GRID_COLS, "room to move before the first turn");
+}
+
+// --- Versus resolution ---
+
+/// Resolve a versus tick with no food on an empty (non-wrapping) board.
+fn versus(
+    a: &[(i32, i32)],
+    dir_a: Direction,
+    b: &[(i32, i32)],
+    dir_b: Direction,
+) -> [VersusStep; 2] {
+    resolve_versus_step([&snake(a), &snake(b)], [dir_a, dir_b], &[], false)
+}
+
+#[test]
+fn moving_into_other_snakes_body_is_fatal() {
+    // A steps into (6,5), a live middle cell of B (B's tail (6,6) vacates).
+    let steps = versus(
+        &[(5, 5), (4, 5), (3, 5)], Direction::Right,
+        &[(6, 4), (6, 5), (6, 6)], Direction::Down,
+    );
+    assert_eq!(steps[0], VersusStep::Died(DeathCause::OtherSnake));
+    assert_eq!(steps[1], VersusStep::Moved(IVec2::new(6, 3)), "B moves clear");
+}
+
+#[test]
+fn head_on_same_cell_kills_both_and_draws() {
+    // Both heads target (5,5) from opposite sides.
+    let steps = versus(
+        &[(4, 5), (3, 5), (2, 5)], Direction::Right,
+        &[(6, 5), (7, 5), (8, 5)], Direction::Left,
+    );
+    assert_eq!(steps[0], VersusStep::Died(DeathCause::HeadOn));
+    assert_eq!(steps[1], VersusStep::Died(DeathCause::HeadOn));
+    assert_eq!(versus_result(&steps), Some(GameResult::Draw));
+}
+
+#[test]
+fn swapping_heads_through_each_other_kills_both() {
+    // Adjacent, facing each other: each head moves onto the other's old head
+    // cell (still a body cell), so both die even though it isn't a head-on.
+    let steps = versus(
+        &[(5, 5), (4, 5), (3, 5)], Direction::Right,
+        &[(6, 5), (7, 5), (8, 5)], Direction::Left,
+    );
+    assert_eq!(steps[0], VersusStep::Died(DeathCause::OtherSnake));
+    assert_eq!(steps[1], VersusStep::Died(DeathCause::OtherSnake));
+    assert_eq!(versus_result(&steps), Some(GameResult::Draw));
+}
+
+#[test]
+fn other_snakes_vacating_tail_cell_is_safe() {
+    // B (head at (10,7)) moves up, vacating its tail (10,5); A steps onto that
+    // freed cell the very same tick, which is legal.
+    let steps = versus(
+        &[(9, 5), (8, 5), (7, 5)], Direction::Right,
+        &[(10, 7), (10, 6), (10, 5)], Direction::Up,
+    );
+    assert_eq!(steps[0], VersusStep::Moved(IVec2::new(10, 5)));
+    assert_eq!(steps[1], VersusStep::Moved(IVec2::new(10, 8)));
+    assert_eq!(versus_result(&steps), None, "both alive: round continues");
+}
+
+#[test]
+fn survivor_wins_when_only_one_dies() {
+    // A runs off the right edge; B moves safely — player 2 wins.
+    let steps = versus(
+        &[(GRID_COLS - 1, 5), (GRID_COLS - 2, 5)], Direction::Right,
+        &[(2, 2), (2, 3), (2, 4)], Direction::Down,
+    );
+    assert_eq!(steps[0], VersusStep::Died(DeathCause::Wall));
+    assert_eq!(
+        versus_result(&steps),
+        Some(GameResult::Winner { player: 2, loser_cause: DeathCause::Wall })
+    );
+
+    // Mirror: only snake 1 dies — player 1 wins.
+    let steps = versus(
+        &[(2, 2), (2, 3), (2, 4)], Direction::Down,
+        &[(GRID_COLS - 1, 5), (GRID_COLS - 2, 5)], Direction::Right,
+    );
+    assert_eq!(
+        versus_result(&steps),
+        Some(GameResult::Winner { player: 1, loser_cause: DeathCause::Wall })
+    );
+}
+
+#[test]
+fn versus_spawns_are_disjoint_and_in_bounds() {
+    let (h0, d0) = versus_spawn(0);
+    let (h1, d1) = versus_spawn(1);
+    let body0 = starting_body(h0, d0, START_LENGTH);
+    let body1 = starting_body(h1, d1, START_LENGTH);
+
+    for cell in body0.iter().chain(body1.iter()) {
+        assert!(crate::spawning::in_bounds(*cell), "spawn cell off the field: {cell}");
+    }
+    for a in &body0 {
+        assert!(!body1.contains(a), "snakes share spawn cell {a}");
+    }
+    // Heads face opposite ways on different rows, never an instant head-on.
+    assert_ne!(d0, d1);
+    assert_ne!(h0.y, h1.y);
+}
+
+#[test]
+fn versus_food_is_never_placed_on_either_snake() {
+    let (h0, d0) = versus_spawn(0);
+    let (h1, d1) = versus_spawn(1);
+    let occupied: Vec<IVec2> = starting_body(h0, d0, START_LENGTH)
+        .into_iter()
+        .chain(starting_body(h1, d1, START_LENGTH))
+        .collect();
+
+    for seed in 0..200 {
+        let cell = place_food(&occupied, seed).expect("plenty of room for a pellet");
+        assert!(crate::spawning::in_bounds(cell), "seed {seed} left the field: {cell}");
+        assert!(!occupied.contains(&cell), "seed {seed} landed on a snake: {cell}");
+    }
 }

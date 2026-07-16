@@ -17,12 +17,19 @@ pub(crate) fn mode_hint(mode: ChaosMode) -> &'static str {
 impl SnakeGame {
     pub(crate) fn update_title_input(&mut self, ctx: &mut GameContext, selection: u8) {
         let input = MenuInput::read(ctx.input);
-        let selection = input.navigate(selection, 2);
+        let selection = input.navigate(selection, 3);
         self.state = GameState::TitleScreen { selection };
 
         if input.confirm {
             match selection {
-                0 => self.state = GameState::ModeSelect { selection: 0 },
+                0 => {
+                    self.mode = GameMode::SinglePlayer;
+                    self.state = GameState::ModeSelect { selection: 0 };
+                }
+                1 => {
+                    self.mode = GameMode::TwoPlayerVersus;
+                    self.state = GameState::ModeSelect { selection: 0 };
+                }
                 _ => self.state = GameState::Achievements,
             }
         }
@@ -31,7 +38,7 @@ impl SnakeGame {
     pub(crate) fn update_achievements_input(&mut self, ctx: &mut GameContext) {
         let input = MenuInput::read(ctx.input);
         if input.back || input.confirm {
-            self.state = GameState::TitleScreen { selection: 1 };
+            self.state = GameState::TitleScreen { selection: 2 };
         }
     }
 

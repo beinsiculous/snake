@@ -79,7 +79,8 @@ impl SnakeGame {
     /// `since_last_eat` has not been reset yet, so it still measures the gap
     /// to the previous food.
     pub(crate) fn unlock_food_achievements(&self, ctx: &mut GameContext) {
-        let length = self.cells.len();
+        let Some(snake) = self.snakes.first() else { return };
+        let length = snake.cells.len();
         for (milestone, id) in LENGTH_MILESTONES.iter().zip([LENGTH_10, LENGTH_20, LENGTH_35]) {
             if length >= *milestone {
                 ctx.achievements.unlock(id);
@@ -88,7 +89,7 @@ impl SnakeGame {
         if length >= FEAST_LENGTH {
             ctx.achievements.unlock(chaos_feast_id(self.chaos_mode));
         }
-        if self.foods_eaten >= 2 && self.since_last_eat <= QUICK_SNACK_WINDOW {
+        if snake.foods_eaten >= 2 && snake.since_last_eat <= QUICK_SNACK_WINDOW {
             ctx.achievements.unlock(QUICK_SNACK);
         }
     }
