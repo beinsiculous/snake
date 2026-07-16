@@ -135,6 +135,9 @@ pub(crate) struct SnakeGame {
     pub(crate) chaos_mode: ChaosMode,
     pub(crate) frame_count: u32,
 
+    /// Pause state + menu, driven from the `Playing` state.
+    pub(crate) pause: PauseMenu,
+
     /// Deforming spring-mass grid drawn under the gameplay sprites.
     pub(crate) grid: Option<GridMesh>,
     /// F1 toggles magenta collider outlines over the sprites.
@@ -154,6 +157,7 @@ impl Default for SnakeGame {
             state: GameState::TitleScreen { selection: 0 },
             chaos_mode: ChaosMode::Normal,
             frame_count: 0,
+            pause: PauseMenu::new(),
             grid: None,
             debug_colliders: false,
         }

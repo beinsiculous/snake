@@ -25,6 +25,30 @@ impl SnakeGame {
             self.debug_colliders = !self.debug_colliders;
         }
 
+        // Pause gate: while paused the whole match is frozen — no tick, no
+        // input, no timers; the overlay is drawn in the UI pass.
+        if self.state == GameState::Playing {
+            let action = self.pause.update(ctx.players, ctx.input);
+            ctx.time_scale = self.pause.time_scale();
+            match action {
+                PauseAction::Restart => { self.start_game(ctx); return; }
+                PauseAction::QuitToTitle => { self.reset_to_title(ctx.world); return; }
+                PauseAction::ExitGame => { ctx.exit_requested = true; return; }
+                // Skip the rest of the frame so the resuming keypress can't
+                // leak into gameplay; the world unfreezes next frame.
+                PauseAction::Resumed => return,
+                PauseAction::Idle => {}
+            }
+            if self.pause.is_active() {
+                // Keep the frozen scene visible under the pause overlay:
+                // re-emit the grid without advancing it (dt 0).
+                engine_core::grid::step_and_emit_grid(
+                    self.grid.as_mut(), ctx.world, ctx.lines, 0.0, self.debug_colliders,
+                );
+                return;
+            }
+        }
+
         self.handle_state_input(ctx);
         if self.state == GameState::Playing {
             self.buffer_direction_input(ctx);
@@ -219,20 +243,13 @@ impl SnakeGame {
     /// Keys that change the game state while the simulation screens are up.
     /// Either player's menu/primary action counts.
     fn handle_state_input(&mut self, ctx: &mut GameContext) {
-        match &self.state {
-            GameState::Playing => {
-                if ctx.players.just_activated_any(GameAction::Menu, ctx.input) {
-                    self.reset_to_title(ctx.world);
-                }
+        // Playing's Menu edge is consumed by the pause gate, not here.
+        if let GameState::GameOver { .. } = &self.state {
+            if ctx.players.just_activated_any(GameAction::Action1, ctx.input) {
+                self.start_game(ctx);
+            } else if ctx.players.just_activated_any(GameAction::Menu, ctx.input) {
+                self.reset_to_title(ctx.world);
             }
-            GameState::GameOver { .. } => {
-                if ctx.players.just_activated_any(GameAction::Action1, ctx.input) {
-                    self.start_game(ctx);
-                } else if ctx.players.just_activated_any(GameAction::Menu, ctx.input) {
-                    self.reset_to_title(ctx.world);
-                }
-            }
-            _ => {}
         }
     }
 
