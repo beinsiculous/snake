@@ -28,7 +28,7 @@ impl SnakeGame {
         // Pause gate: while paused the whole match is frozen — no tick, no
         // input, no timers; the overlay is drawn in the UI pass.
         if self.state == GameState::Playing {
-            let action = self.pause.update(ctx.players, ctx.input);
+            let action = self.pause.update(ctx.players, ctx.input, ctx.window_size);
             ctx.time_scale = self.pause.time_scale();
             match action {
                 PauseAction::Restart => { self.start_game(ctx); return; }

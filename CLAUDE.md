@@ -64,7 +64,7 @@ Planned identity under the Deion pivot (the game is still the neon original toda
 - The **angry meatball** — a shared cross-game character (the rocks in Meatieroids, the patty-layer rank in Burger Invaders) — roams the arena as a hazard here.
 - This supersedes the earlier DEION_STYLE §5 Cubert-ice-cube casting. Arena theming (kitchen floor?), what the food pellets are, and versus-mode identity (two wiener dogs? Frank vs a rival?) are open.
 - Style SSOT: `deion_assets/DEION_STYLE.md` via the root symlink (the symlink assumes the standard side-by-side checkout — the same requirement the Cargo path dep already imposes). Settled metrics: 16px base cell, nearest filtering, 5× integer scale to `RENDER_UNIT = 80`, one art cell = one world unit.
-- Runtime assets arrive ONLY via the deion_assets sync copy into `assets/sprites/` (F2, not yet built) — never symlink or hand-copy art in. AI art is quarantined (`ai_` prefix, `deion_assets/ai/` only) and NEVER ships; `deion_assets/scripts/check_no_ai_assets.sh` must pass on shipping asset trees. Sheet clip names are the stable API.
+- Runtime assets arrive ONLY via the deion_assets sync copy into `assets/sprites/` (F2, not yet built) — never symlink or hand-copy art in. AI art is quarantined (`ai_` prefix, `deion_assets/ai/` only) — tiered ship rule (DEION_STYLE.md §6, Aug 19 2026): may ship in FREE web builds, never in paid/marketplace builds; `deion_assets/scripts/check_no_ai_assets.sh` must pass on any paid release's asset tree. Sheet clip names are the stable API.
 
 ## Review workflow
 
