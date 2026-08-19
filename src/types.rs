@@ -116,7 +116,7 @@ impl SnakeState {
     }
 }
 
-pub(crate) struct SnakeGame {
+pub struct SnakeGame {
     /// One or two snakes sharing the grid (length depends on `mode`).
     pub(crate) snakes: Vec<SnakeState>,
     pub(crate) mode: GameMode,
