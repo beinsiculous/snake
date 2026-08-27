@@ -308,6 +308,7 @@ impl SnakeGame {
         self.ripple_grid(head_pos, GRID_IMPULSE_DEATH_STRENGTH, GRID_IMPULSE_DEATH_RADIUS);
 
         self.unlock_death_achievements(ctx, cause);
+        ctx.scores.submit("solo", self.snakes[0].score as u64);
         self.state = GameState::GameOver { result: GameResult::Solo(cause) };
     }
 
@@ -322,6 +323,9 @@ impl SnakeGame {
         for pos in dead_heads {
             ctx.particles.spawn_burst(pos, &effects::death_burst(&theme, self.tex_id));
             self.ripple_grid(pos, GRID_IMPULSE_DEATH_STRENGTH, GRID_IMPULSE_DEATH_RADIUS);
+        }
+        for snake in &self.snakes {
+            ctx.scores.submit("versus", snake.score as u64);
         }
         self.state = GameState::GameOver { result };
     }
