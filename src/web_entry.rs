@@ -19,7 +19,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 /// 2. `scripts/build_wasm.sh`'s output dir (currently hardcoded `v1`),
 /// 3. the site's `src/content/games/<slug>.md` `wasm:` path,
 /// 4. the deployed dir `insiculous_web/public/games/<slug>/v<N>/`.
-const ASSET_BASE: &str = "/games/snake/v1/assets";
+const ASSET_BASE: &str = "/games/snake/v2/assets";
 
 #[wasm_bindgen(start)]
 pub fn start() {
