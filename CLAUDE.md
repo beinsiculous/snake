@@ -92,4 +92,4 @@ doc, never left as a bare `TODO:`, never dropped. The `file-issue` skill carries
 - The adversarial-review skill lives in `.claude/skills/`. Approved plans go to `review/plan.md` and are reviewed via `scripts/request-review.sh plan review/plan.md --reviewer=kimi` BEFORE implementation.
 - Commits over 100 changed lines are gated by `scripts/commit-review-hook.sh`; the `ADV_REVIEWED=1` prefix is allowed only after a code-mode review adjudicated with the user, or when the user explicitly skipped review.
 - `review/` holds gitignored transients (only `.gitkeep` is tracked).
-- NOTE: `scripts/request-review.sh` and `scripts/commit-review-hook.sh` are copies of `../../insiculous_2d/scripts/*` — re-copy when the engine master changes.
+- NOTE: `scripts/request-review.sh` and `scripts/commit-review-hook.sh` are copies — the canonical ones live in the working-set root, not in `insiculous_2d`. Never edit a copy: fix the root's and re-copy, and `scripts/check-skill-parity.sh` there reports any repo that drifted.
