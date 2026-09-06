@@ -1,6 +1,7 @@
 //! Snake achievement definitions and unlock logic.
 //!
-//! Registered once in `init()`. Growth/feast achievements unlock live from
+//! Registered through `Game::register_achievements` — the engine calls it before the window
+//! opens, which is what lets `--achievements-manifest` export the list with no GPU. Growth/feast achievements unlock live from
 //! `eat_food`; Ouroboros unlocks on a self-bite death.
 
 use engine_core::prelude::*;
@@ -32,7 +33,7 @@ pub(crate) const DISPLAY_SECTIONS: &[(&str, &[&str])] = &[
         &[OUROBOROS, QUICK_SNACK]),
 ];
 
-/// Register every Snake achievement. Call once from `Game::init`.
+/// Register every Snake achievement. Call once from `Game::register_achievements`.
 pub(crate) fn register_all(mgr: &mut AchievementManager) {
     mgr.register(Achievement::new(LENGTH_10,
         "Garden Snake",
