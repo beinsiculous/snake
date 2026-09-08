@@ -10,6 +10,8 @@ cargo run --features editor   # run inside the engine's scene editor
 cargo test                    # 38 headless tests
 ```
 
+The same build runs in the browser at [beinsiculous.com/playground/snake/](https://beinsiculous.com/playground/snake/): the game inside the editor, layout only — the rules are compiled in and nothing you change there persists.
+
 Requires the engine checkout side by side: `../../insiculous_2d` (relative path dependency).
 
 ## Controls
