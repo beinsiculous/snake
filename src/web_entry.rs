@@ -44,7 +44,7 @@ const ASSET_BASE: &str = "/games/snake/v2/assets";
 /// 3. the site's `src/content/games/<slug>.md` `editor:` path,
 /// 4. the deployed dir `insiculous_web/public/playground/<slug>/v<N>/`.
 #[cfg(feature = "editor")]
-const EDITOR_ASSET_BASE: &str = "/playground/snake/v1/assets";
+const EDITOR_ASSET_BASE: &str = "/playground/snake/v2/assets";
 
 /// The editor's preferences slot for this game.
 ///
