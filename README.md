@@ -41,11 +41,15 @@ In **1 Player** mode the lone snake listens to *both* control sets — WASD, arr
 - **Achievements** (9, single-player only): length milestones (10/20/35), a length-15 "feast" per chaos mode, Ouroboros (bite your own tail), Quick Snack (eat twice within 1.5s). Saved to `saves/snake_achievements.json`.
 - **Universal pause** (Esc/Start): the whole match freezes — grid, particles, timers — under the engine's standard pause overlay.
 
-## The Deion Pivot: Hot Dog!
+## The Deion Pivot: Bratdog
+
+**Bratdog** is the game title (Jesse, Sep 9 2026): bratwurst meets bratty
+dog, growing absurdly long with every bite. "Frank" remains a working
+character name, separate from the title.
 
 The project is re-theming every game around **Deion the Insiculous** and his food-coded world (see `deion_assets/DEION_STYLE.md` via the repo symlink). Snake's planned identity:
 
-**Hot Dog!** — the snake becomes a **wiener dog**: quite literally a wiener AND a dog, a dachshund that is a hot dog. Working name "Frank" (pending Jesse's sign-off — he's a new character who needs Jesse's design). His body grows a bun-warmed segment for every food eaten, and that ever-stretching body is the excuse to bring **tilemap logic** into this game: segments tracked and rendered through the engine's Tilemap component (Frogger was the engine's first Tilemap consumer; Hot Dog! becomes the second). Meanwhile the **angry meatball** — the shared cross-game menace who plays the rocks in Meatieroids — roams the arena as a hazard.
+**Bratdog** — the snake becomes a **wiener dog**: quite literally a wiener AND a dog, a dachshund that is a bratwurst. Working name "Frank" (pending Jesse's sign-off — he's a new character who needs Jesse's design). His body grows a bun-warmed segment for every food eaten, and that ever-stretching body is the excuse to bring **tilemap logic** into this game: segments tracked and rendered through the engine's Tilemap component (Frogger was the engine's first Tilemap consumer; Bratdog becomes the second). Meanwhile the **angry meatball** — the shared cross-game menace who plays the rocks in Meatieroids — roams the arena as a hazard.
 
 This casting supersedes the earlier DEION_STYLE §5 idea of Cubert-as-ice-cube. Art follows the settled metrics: 16px base cells, nearest filtering, 5× integer scale (one 16px art cell = one 80px world unit). No AI-generated art ever ships.
 

@@ -55,11 +55,11 @@ This is a single-crate game (`insiculous_snake`) built on the in-house `insiculo
 - The renderer multiplies `Transform2D.scale` by `RENDER_UNIT = 80.0` to get pixel size — that's why sprite scales are `size_px / RENDER_UNIT` (`SEGMENT_PX`, `FOOD_PX`, wall bars).
 - **This game uses no physics at all** — no `RigidBody`, no `Collider`, no `PhysicsSystem`. Walls are purely visual sprites; the wall *rule* is the bounds check in `step_snake`. So the engine footgun "colliders are absolute pixels and ignore `Transform2D.scale`" cannot bite here — but it will the moment anyone adds a collider, since every sprite in this game is sized via `scale`. F1 toggles the collider debug overlay anyway (convention parity with the other games; it draws nothing here).
 
-## The Deion Re-skin (Phase G): Hot Dog!
+## The Deion Re-skin (Phase G): Bratdog
 
 Planned identity under the Deion pivot (the game is still the neon original today):
 
-- New title **Hot Dog!**: the snake becomes a **wiener dog** — quite literally a wiener AND a dog (a dachshund that is a hot dog). Working name **"Frank"**, pending Jesse's sign-off; he's a NEW character who needs Jesse's design.
+- New title **Bratdog**: the snake becomes a **wiener dog** — quite literally a wiener AND a dog (a dachshund that is a bratwurst). Working name **"Frank"**, pending Jesse's sign-off; he's a NEW character who needs Jesse's design.
 - His body grows a segment per food eaten; the growing body is the plan's excuse to introduce **tilemap logic** to this game — body segments rendered/tracked via the engine's `Tilemap` component as the dog stretches. Frogger is the engine's first Tilemap consumer; this becomes the second.
 - The **angry meatball** — a shared cross-game character (the rocks in Meatieroids) — roams the arena as a hazard here.
 - This supersedes the earlier DEION_STYLE §5 Cubert-ice-cube casting. Arena theming (kitchen floor?), what the food pellets are, and versus-mode identity (two wiener dogs? Frank vs a rival?) are open.
