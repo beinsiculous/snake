@@ -43,6 +43,8 @@ pub fn game_config(asset_base: &str) -> GameConfig {
         .with_size(WIN_W as u32, WIN_H as u32)
         .with_clear_color(0.0, 0.0, 0.0, 1.0)
         .with_fps(60)
+        .with_startup_splashes(STARTUP_CARDS)
+        .with_window_icon(WINDOW_ICON)
         .with_asset_base_path(asset_base)
 }
 

@@ -1,0 +1,17 @@
+# Snake's art, copied from deion_assets by scripts/sync_sprites.py — the only way
+# art enters this game. Run it from this repo's root:
+#
+#     python3 deion_assets/scripts/sync_sprites.py .
+#
+# and `--check` to prove the copies still match the pinned commit below (the
+# working set's scripts/check-sprite-sync.sh runs that over every game).
+#
+# Today it carries only the startup cards and the engine's window icon, which
+# every game shows; the game's own art arrives with its re-skin. The quarantined
+# `ai_` prefix stays on the copies: a paid build's check_no_ai_assets.sh gate must
+# still find them until Jesse's cleanup pass.
+#
+# deion_assets bd4ff3f0b742b155e154a4f71f4837bd51164909
+ai/branding/be_insiculous/ai_be_insiculous_320x192.png
+ai/branding/insiculous_2d_maxwell/ai_insiculous_2d_maxwell_splash_320x192.png
+ai/branding/insiculous_2d_maxwell/ai_insiculous_2d_maxwell_icon_64x64.png
