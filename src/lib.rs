@@ -1,4 +1,4 @@
-//! Insiculous Snake — game crate.
+//! Bratdog — game crate: snake, re-skinned as Frank the bratwurst dachshund.
 //!
 //! The library owns the whole game (`SnakeGame` + its `Game` impl) so both
 //! entry points stay thin: `main.rs` (native window, filesystem saves,
@@ -8,14 +8,19 @@
 //! window, `web_entry.rs` for the browser's editor bundle.
 
 mod achievements;
+mod body;
 mod constants;
 mod drawing;
 mod effects;
+#[cfg(test)]
+mod flow_tests;
 mod gameplay;
 #[cfg(test)]
 mod gameplay_tests;
 mod menu;
 mod spawning;
+#[cfg(test)]
+mod test_support;
 mod types;
 
 #[cfg(target_arch = "wasm32")]
@@ -38,11 +43,18 @@ pub use types::SnakeGame;
 /// matters); the web entry passes the deploy URL base. Passing a bare
 /// relative path like `"assets"` would silently resolve against the
 /// current working directory.
+fn load_sheet(assets: &mut AssetManager, spec: &SheetSpec) -> SpriteSheet {
+    assets
+        .load_sprite_sheet(spec.path)
+        .unwrap_or_else(|error| panic!("{} does not load: {error}", spec.path))
+}
+
 pub fn game_config(asset_base: &str) -> GameConfig {
-    GameConfig::new("Insiculous Snake")
+    GameConfig::new("Bratdog")
         .with_size(WIN_W as u32, WIN_H as u32)
         .with_clear_color(0.0, 0.0, 0.0, 1.0)
         .with_fps(60)
+        .with_pixel_snap(true)
         .with_startup_splashes(STARTUP_CARDS)
         .with_window_icon(WINDOW_ICON)
         .with_asset_base_path(asset_base)
@@ -62,16 +74,24 @@ impl Game for SnakeGame {
         }
 
         let tex = ctx.assets.create_solid_color(1, 1, [255, 255, 255, 255]).unwrap();
-        self.tex_id = tex.id;
+        self.sheets.white = tex.id;
 
-        let theme = ChaosTheme::for_mode(self.chaos_mode);
-        self.background = Some(spawn_background(
-            ctx.world, tex.id, theme.bg_color, Vec2::new(WIN_W, WIN_H)));
-        self.walls = spawn_walls(ctx.world, tex.id, theme.structure_color);
+        // Every sheet's path and cell is in `constants.rs`'s sheets block; each PNG and
+        // its `.sheet.ron` sidecar is a synced copy under `assets/sprites/`.
+        self.sheets.frank = load_sheet(ctx.assets, &FRANK);
+        self.sheets.frank_player_two = load_sheet(ctx.assets, &FRANK_PLAYER_TWO);
+        self.sheets.pretzel = load_sheet(ctx.assets, &PRETZEL);
+        self.sheets.cheese_bite = load_sheet(ctx.assets, &CHEESE_BITE);
+        self.sheets.bacon_bone = load_sheet(ctx.assets, &BACON_BONE);
+        self.sheets.kitchen_floor = load_sheet(ctx.assets, &KITCHEN_FLOOR);
+        self.sheets.kitchen_wall = load_sheet(ctx.assets, &KITCHEN_WALL);
 
-        // The snake and food spawn fresh on every `start_game()`. Build the
-        // deforming grid backdrop now so it exists before the first run.
-        self.grid = Some(default_playfield_grid(&theme));
+        // The kitchen, its wall and the grid over them stay up under the menus. The dogs
+        // and the snacks spawn fresh on every `start_game()`.
+        self.floor = Some(spawn_floor(ctx.world, &self.sheets.kitchen_floor));
+        self.wall = Some(spawn_wall(ctx.world, &self.sheets.kitchen_wall));
+        self.backdrop = Some(spawn_backdrop(ctx.world, &ChaosTheme::for_mode(self.chaos_mode)));
+        self.apply_theme(ctx.world);
     }
 
     fn update(&mut self, ctx: &mut GameContext) {

@@ -8,8 +8,9 @@ use glam::IVec2;
 
 use crate::constants::*;
 use crate::gameplay::{
-    food_count, next_direction, place_food, resolve_versus_step, starting_body, step_snake,
-    tick_interval, versus_result, versus_spawn, walls_wrap, StepOutcome, VersusStep,
+    food_count, next_direction, piece_for, place_food, resolve_versus_step, snack_for, starting_body,
+    step_direction, step_snake, tick_interval, versus_result, versus_spawn, walls_wrap, Axis,
+    HorizontalEdge, Piece, Snack, StepOutcome, VerticalEdge, VersusStep,
 };
 use crate::menu::mode_hint;
 use crate::types::{DeathCause, Direction, GameResult};
@@ -347,5 +348,131 @@ fn versus_food_is_never_placed_on_either_snake() {
         let cell = place_food(&occupied, seed).expect("plenty of room for a pellet");
         assert!(crate::spawning::in_bounds(cell), "seed {seed} left the field: {cell}");
         assert!(!occupied.contains(&cell), "seed {seed} landed on a snake: {cell}");
+    }
+}
+
+// --- Which piece a body cell shows ---
+
+fn cell(x: i32, y: i32) -> IVec2 {
+    IVec2::new(x, y)
+}
+
+#[test]
+fn a_head_points_away_from_its_neck_and_a_tail_away_from_its_body() {
+    let middle = cell(5, 5);
+    for direction in [Direction::Up, Direction::Down, Direction::Left, Direction::Right] {
+        let behind = middle - direction.delta();
+        assert_eq!(piece_for(None, middle, Some(behind)), Some(Piece::Head(direction)), "head {direction:?}");
+        assert_eq!(piece_for(Some(behind), middle, None), Some(Piece::Tail(direction)), "tail {direction:?}");
+    }
+}
+
+#[test]
+fn a_straight_piece_names_its_axis_whichever_way_the_dog_travels() {
+    let middle = cell(5, 5);
+    let (west, east) = (cell(4, 5), cell(6, 5));
+    let (south, north) = (cell(5, 4), cell(5, 6));
+    let horizontal = Some(Piece::Straight(Axis::Horizontal));
+    let vertical = Some(Piece::Straight(Axis::Vertical));
+    assert_eq!(piece_for(Some(east), middle, Some(west)), horizontal);
+    assert_eq!(piece_for(Some(west), middle, Some(east)), horizontal);
+    assert_eq!(piece_for(Some(north), middle, Some(south)), vertical);
+    assert_eq!(piece_for(Some(south), middle, Some(north)), vertical);
+}
+
+#[test]
+fn a_corner_names_the_two_edges_it_leaves_by_from_either_direction_of_travel() {
+    let middle = cell(5, 5);
+    let (west, east) = (cell(4, 5), cell(6, 5));
+    let (south, north) = (cell(5, 4), cell(5, 6));
+    for (vertical_neighbour, horizontal_neighbour, expected) in [
+        (south, west, Piece::Corner(VerticalEdge::South, HorizontalEdge::West)),
+        (north, west, Piece::Corner(VerticalEdge::North, HorizontalEdge::West)),
+        (north, east, Piece::Corner(VerticalEdge::North, HorizontalEdge::East)),
+        (south, east, Piece::Corner(VerticalEdge::South, HorizontalEdge::East)),
+    ] {
+        assert_eq!(piece_for(Some(vertical_neighbour), middle, Some(horizontal_neighbour)), Some(expected));
+        assert_eq!(piece_for(Some(horizontal_neighbour), middle, Some(vertical_neighbour)), Some(expected));
+    }
+}
+
+#[test]
+fn every_piece_names_a_distinct_clip() {
+    let mut pieces = Vec::new();
+    for direction in [Direction::Up, Direction::Down, Direction::Left, Direction::Right] {
+        pieces.push(Piece::Head(direction));
+        pieces.push(Piece::Tail(direction));
+    }
+    pieces.push(Piece::Straight(Axis::Horizontal));
+    pieces.push(Piece::Straight(Axis::Vertical));
+    for vertical in [VerticalEdge::North, VerticalEdge::South] {
+        for horizontal in [HorizontalEdge::West, HorizontalEdge::East] {
+            pieces.push(Piece::Corner(vertical, horizontal));
+        }
+    }
+    let mut clips: Vec<&str> = pieces.iter().map(|piece| piece.clip()).collect();
+    clips.sort_unstable();
+    clips.dedup();
+    assert_eq!(clips.len(), 14, "fourteen pieces, fourteen clips");
+}
+
+#[test]
+fn a_body_across_a_wrap_seam_connects_toward_the_edge_it_left_by() {
+    let right_edge = GRID_COLS - 1;
+    let top_edge = GRID_ROWS - 1;
+    // A dog going east out of the right edge: its head on column 0, its neck on the last.
+    assert_eq!(step_direction(cell(right_edge, 3), cell(0, 3)), Some(Direction::Right));
+    assert_eq!(piece_for(None, cell(0, 3), Some(cell(right_edge, 3))), Some(Piece::Head(Direction::Right)));
+    assert_eq!(
+        piece_for(Some(cell(0, 3)), cell(right_edge, 3), Some(cell(right_edge - 1, 3))),
+        Some(Piece::Straight(Axis::Horizontal)),
+    );
+    // Going north out of the top edge, turning east straight after the seam.
+    assert_eq!(step_direction(cell(4, top_edge), cell(4, 0)), Some(Direction::Up));
+    assert_eq!(
+        piece_for(Some(cell(5, 0)), cell(4, 0), Some(cell(4, top_edge))),
+        Some(Piece::Corner(VerticalEdge::South, HorizontalEdge::East)),
+    );
+}
+
+#[test]
+fn a_dog_of_two_cells_is_a_head_and_a_tail() {
+    let cells = [cell(6, 2), cell(5, 2)];
+    assert_eq!(piece_for(None, cells[0], Some(cells[1])), Some(Piece::Head(Direction::Right)));
+    assert_eq!(piece_for(Some(cells[0]), cells[1], None), Some(Piece::Tail(Direction::Left)));
+}
+
+#[test]
+fn cells_that_do_not_touch_show_no_piece() {
+    assert_eq!(piece_for(None, cell(5, 5), None), None, "a lone cell");
+    assert_eq!(piece_for(None, cell(5, 5), Some(cell(7, 5))), None, "a gap of one");
+    assert_eq!(piece_for(Some(cell(6, 6)), cell(5, 5), Some(cell(4, 5))), None, "a diagonal");
+}
+
+// --- Snacks ---
+
+#[test]
+fn every_snack_turns_up() {
+    let seen: Vec<Snack> = (0..300).map(snack_for).collect();
+    for snack in Snack::ALL {
+        assert!(seen.contains(&snack), "{snack:?} never chosen");
+    }
+}
+
+#[test]
+fn the_snack_does_not_follow_the_column_it_lands_in() {
+    // `spawn_missing_food` places a pellet and picks its snack from the same seed; on an
+    // empty board every column must still see more than one kind of snack.
+    let mut snacks_per_column: Vec<Vec<Snack>> = vec![Vec::new(); GRID_COLS as usize];
+    for seed in 0..5000 {
+        let landed = place_food(&[], seed).expect("an empty board has room");
+        let column = &mut snacks_per_column[landed.x as usize];
+        let snack = snack_for(seed);
+        if !column.contains(&snack) {
+            column.push(snack);
+        }
+    }
+    for (column, snacks) in snacks_per_column.iter().enumerate() {
+        assert!(snacks.len() >= 2, "column {column} only ever gets {snacks:?}");
     }
 }

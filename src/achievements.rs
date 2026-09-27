@@ -1,4 +1,6 @@
-//! Snake achievement definitions and unlock logic.
+//! Bratdog achievement definitions and unlock logic. The ids are what the saves
+//! persist, so they keep the game's original names; the titles and descriptions are
+//! Bratdog's.
 //!
 //! Registered through `Game::register_achievements` — the engine calls it before the window
 //! opens, which is what lets `--achievements-manifest` export the list with no GPU. Growth/feast achievements unlock live from
@@ -33,10 +35,10 @@ pub(crate) const DISPLAY_SECTIONS: &[(&str, &[&str])] = &[
         &[OUROBOROS, QUICK_SNACK]),
 ];
 
-/// Register every Snake achievement. Call once from `Game::register_achievements`.
+/// Register every Bratdog achievement. Call once from `Game::register_achievements`.
 pub(crate) fn register_all(mgr: &mut AchievementManager) {
     mgr.register(Achievement::new(LENGTH_10,
-        "Garden Snake",
+        "Foot-Long",
         "Reach length 10."));
     mgr.register(Achievement::new(LENGTH_20,
         "Long Boi",
@@ -63,7 +65,7 @@ pub(crate) fn register_all(mgr: &mut AchievementManager) {
         "Bite your own tail."));
     mgr.register(Achievement::new(QUICK_SNACK,
         "Quick Snack",
-        "Eat a food within 1.5 seconds of the previous one."));
+        "Eat a snack within 1.5 seconds of the previous one."));
 }
 
 pub(crate) fn chaos_feast_id(mode: ChaosMode) -> &'static str {

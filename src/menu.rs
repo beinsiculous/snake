@@ -58,10 +58,10 @@ pub(crate) fn achievements_panel(title: &str, window_size: Vec2) -> MenuPanel {
 /// One-line description of what each chaos mode means in this game.
 pub(crate) fn mode_hint(mode: ChaosMode) -> &'static str {
     match mode {
-        ChaosMode::Normal => "The classic garden. Walls bite back.",
-        ChaosMode::Insane => "Faster slither - and every meal makes it worse.",
-        ChaosMode::Ridiculous => "Walls wrap around - two feasts on the board.",
-        ChaosMode::Insiculous => "Wrapping walls, double food, ever-faster slither.",
+        ChaosMode::Normal => "The classic kitchen. The counter bites back.",
+        ChaosMode::Insane => "Faster trot - and every snack makes it worse.",
+        ChaosMode::Ridiculous => "The walls open up - two snacks on the floor.",
+        ChaosMode::Insiculous => "Open walls, double snacks, ever-faster trot.",
     }
 }
 

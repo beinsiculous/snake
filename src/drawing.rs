@@ -19,7 +19,7 @@ impl SnakeGame {
 
     fn draw_title(&self, ctx: &mut GameContext, selection: u8) {
         let style = self.menu_style();
-        let panel = title_panel("INSICULOUS SNAKE", ctx.window_size);
+        let panel = title_panel("BRATDOG", ctx.window_size);
         let mut y = panel.begin(ctx.ui, &style);
         for (i, &item) in TITLE_ITEMS.iter().enumerate() {
             y = panel.item(ctx.ui, y, title_label(item), i as u8 == selection, &style);
@@ -150,7 +150,7 @@ impl SnakeGame {
         let title: String = match result {
             GameResult::Solo(cause) => match cause {
                 DeathCause::Wall => "THE WALL WON".into(),
-                DeathCause::SelfBite => "YOU ATE YOURSELF".into(),
+                DeathCause::SelfBite => "YOU BIT YOUR OWN TAIL".into(),
                 DeathCause::OtherSnake | DeathCause::HeadOn => "GAME OVER".into(),
             },
             GameResult::Winner { player, .. } => format!("PLAYER {player} WINS"),

@@ -161,11 +161,15 @@ pub(crate) fn versus_result(steps: &[VersusStep; 2]) -> Option<GameResult> {
 
 /// Head cell and heading for versus snake `index`: player 1 starts lower-left
 /// heading right, player 2 upper-right heading left — disjoint rows so they
-/// never spawn into a head-on.
+/// never spawn into a head-on. Player 2's start is player 1's turned half a turn
+/// about the board's centre, so each has the same room to every wall; the board's
+/// dimensions alone would not keep that fair (on 24 x 15, `3 * cols / 4` gives
+/// player 2 one cell more to run than player 1).
 pub(crate) fn versus_spawn(index: usize) -> (IVec2, Direction) {
+    let first = IVec2::new(GRID_COLS / 4, GRID_ROWS / 3);
     match index {
-        0 => (IVec2::new(GRID_COLS / 4, GRID_ROWS / 3), Direction::Right),
-        _ => (IVec2::new(3 * GRID_COLS / 4, 2 * GRID_ROWS / 3), Direction::Left),
+        0 => (first, Direction::Right),
+        _ => (IVec2::new(GRID_COLS - 1 - first.x, GRID_ROWS - 1 - first.y), Direction::Left),
     }
 }
 
@@ -208,4 +212,150 @@ pub(crate) fn food_count(mode: ChaosMode) -> usize {
 /// Wrap-around walls are the other half of the Ridiculous buff.
 pub(crate) fn walls_wrap(mode: ChaosMode) -> bool {
     mode.is_ridiculous()
+}
+
+// --- how a dog is drawn ---
+
+/// Which way a body runs through a straight piece.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Axis {
+    Horizontal,
+    Vertical,
+}
+
+/// The top or bottom edge of a cell.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum VerticalEdge {
+    North,
+    South,
+}
+
+/// The left or right edge of a cell.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum HorizontalEdge {
+    West,
+    East,
+}
+
+/// Which of Frank's pieces one body cell shows. A head or a tail names the way its nose
+/// or its tip points, its neck on the opposite edge; a corner names the two edges its
+/// sausage leaves the cell by, as the sheet's clips do.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Piece {
+    Head(Direction),
+    Tail(Direction),
+    Straight(Axis),
+    Corner(VerticalEdge, HorizontalEdge),
+}
+
+impl Piece {
+    /// The sheet clip this piece draws — the names are the sidecar's.
+    pub(crate) fn clip(self) -> &'static str {
+        use Direction::*;
+        match self {
+            Piece::Head(Right) => "head_east",
+            Piece::Head(Down) => "head_south",
+            Piece::Head(Left) => "head_west",
+            Piece::Head(Up) => "head_north",
+            Piece::Tail(Right) => "tail_east",
+            Piece::Tail(Down) => "tail_south",
+            Piece::Tail(Left) => "tail_west",
+            Piece::Tail(Up) => "tail_north",
+            Piece::Straight(Axis::Horizontal) => "body_horizontal",
+            Piece::Straight(Axis::Vertical) => "body_vertical",
+            Piece::Corner(VerticalEdge::South, HorizontalEdge::West) => "corner_south_west",
+            Piece::Corner(VerticalEdge::North, HorizontalEdge::West) => "corner_north_west",
+            Piece::Corner(VerticalEdge::North, HorizontalEdge::East) => "corner_north_east",
+            Piece::Corner(VerticalEdge::South, HorizontalEdge::East) => "corner_south_east",
+        }
+    }
+}
+
+/// The clip a dead dog's head plays, facing the way its head piece faces.
+pub(crate) fn hurt_clip(facing: Direction) -> &'static str {
+    match facing {
+        Direction::Right => "hurt_east",
+        Direction::Down => "hurt_south",
+        Direction::Left => "hurt_west",
+        Direction::Up => "hurt_north",
+    }
+}
+
+/// The direction of one grid step from `from` to `to`, the short way round: a step
+/// across a wrap seam — column 23 to column 0 — is one cell, not twenty-three, so a
+/// body that wraps still draws its connectors toward the edge it left by. `None` for
+/// two cells that are not neighbours.
+pub(crate) fn step_direction(from: IVec2, to: IVec2) -> Option<Direction> {
+    let mut delta = to - from;
+    if delta.x.abs() == GRID_COLS - 1 {
+        delta.x = -delta.x.signum();
+    }
+    if delta.y.abs() == GRID_ROWS - 1 {
+        delta.y = -delta.y.signum();
+    }
+    match (delta.x, delta.y) {
+        (1, 0) => Some(Direction::Right),
+        (-1, 0) => Some(Direction::Left),
+        (0, 1) => Some(Direction::Up),
+        (0, -1) => Some(Direction::Down),
+        _ => None,
+    }
+}
+
+/// The piece `cell` shows, from its neighbours along the body: the one toward the head
+/// (`None` for the head itself) and the one toward the tail (`None` for the tail). `None`
+/// for a dog of one cell or for neighbours that do not touch `cell`.
+pub(crate) fn piece_for(toward_head: Option<IVec2>, cell: IVec2, toward_tail: Option<IVec2>) -> Option<Piece> {
+    let headward = toward_head.map(|neighbour| step_direction(cell, neighbour));
+    let tailward = toward_tail.map(|neighbour| step_direction(cell, neighbour));
+    match (headward, tailward) {
+        (None, Some(Some(neck))) => Some(Piece::Head(neck.opposite())),
+        (Some(Some(body)), None) => Some(Piece::Tail(body.opposite())),
+        (Some(Some(first)), Some(Some(second))) if first == second.opposite() => {
+            Some(Piece::Straight(match first {
+                Direction::Left | Direction::Right => Axis::Horizontal,
+                Direction::Up | Direction::Down => Axis::Vertical,
+            }))
+        }
+        (Some(Some(first)), Some(Some(second))) => {
+            let vertical = [first, second].into_iter().find_map(|direction| match direction {
+                Direction::Up => Some(VerticalEdge::North),
+                Direction::Down => Some(VerticalEdge::South),
+                _ => None,
+            })?;
+            let horizontal = [first, second].into_iter().find_map(|direction| match direction {
+                Direction::Left => Some(HorizontalEdge::West),
+                Direction::Right => Some(HorizontalEdge::East),
+                _ => None,
+            })?;
+            Some(Piece::Corner(vertical, horizontal))
+        }
+        _ => None,
+    }
+}
+
+// --- the snacks ---
+
+/// The three snacks a pellet can be. They score and grow the same.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Snack {
+    Pretzel,
+    CheeseBite,
+    BaconBone,
+}
+
+impl Snack {
+    pub(crate) const ALL: [Snack; 3] = [Snack::Pretzel, Snack::CheeseBite, Snack::BaconBone];
+}
+
+/// Salts a pellet's seed before the snack is read from it, so the snack does not follow
+/// the hash `place_food` read the pellet's cell from.
+const SNACK_SALT: u32 = 0x5EED_B0DE;
+
+/// The snack a pellet placed from `seed` is. `place_food` takes the cell from the hash's
+/// value modulo the board, and a board 24 wide is a multiple of 3, so the same value
+/// modulo 3 would stripe the snacks by column; the snack is read instead from a salted
+/// hash's high bits, which the multiplicative hash mixes best.
+pub(crate) fn snack_for(seed: u32) -> Snack {
+    Snack::ALL[((hash_u32(seed ^ SNACK_SALT) >> 16) % 3) as usize]
 }
