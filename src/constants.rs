@@ -3,17 +3,6 @@ use engine_core::prelude::*;
 use crate::gameplay::Snack;
 use crate::types::Dog;
 
-/// An opaque colour from its `0xRRGGBB` hex — the form DEION_STYLE.md § 4 records
-/// every ramp in, so a constant here reads the same as the style guide's row.
-const fn rgb(hex: u32) -> Vec4 {
-    Vec4::new(
-        ((hex >> 16) & 0xFF) as f32 / 255.0,
-        ((hex >> 8) & 0xFF) as f32 / 255.0,
-        (hex & 0xFF) as f32 / 255.0,
-        1.0,
-    )
-}
-
 pub(crate) const WIN_W: f32 = 800.0;
 pub(crate) const WIN_H: f32 = 600.0;
 

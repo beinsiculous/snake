@@ -134,14 +134,9 @@ pub(crate) fn spawn_backdrop(world: &mut World, theme: &ChaosTheme) -> EntityId 
         .id()
 }
 
-/// A detached effect's machine: it plays `clip` once and despawns.
-fn one_shot_machine(clip: &str) -> ClipStateMachine {
-    ClipStateMachine::new(clip, vec![(clip.to_string(), ClipState::new(clip, OnFinished::Despawn))])
-}
-
 /// A snack's one state: its idle bob.
 fn snack_machine() -> ClipStateMachine {
-    ClipStateMachine::new(SNACK_IDLE, vec![(SNACK_IDLE.to_string(), ClipState::staying(SNACK_IDLE))])
+    ClipStateMachine::single(SNACK_IDLE)
 }
 
 fn snack_components(sheet: &SpriteSheet, snack: Snack) -> (Transform2D, Sprite, SpriteAnimation) {
@@ -174,7 +169,7 @@ pub(crate) fn spawn_collect(world: &mut World, sheet: &SpriteSheet, snack: Snack
         .with(transform)
         .with(sprite)
         .with(animation)
-        .with(one_shot_machine(SNACK_COLLECT))
+        .with(ClipStateMachine::one_shot(SNACK_COLLECT))
         .id()
 }
 
