@@ -1,6 +1,6 @@
 use engine_core::prelude::*;
 use crate::achievements::DISPLAY_SECTIONS;
-use crate::menu::{achievements_panel, mode_hint, mode_select_panel, title_label, title_panel, TITLE_ITEMS};
+use crate::menu::{achievements_panel, mode_hint, mode_select_panel, title_label, TITLE_ITEMS};
 use crate::types::*;
 
 impl SnakeGame {
@@ -19,7 +19,9 @@ impl SnakeGame {
 
     fn draw_title(&self, ctx: &mut GameContext, selection: u8) {
         let style = self.menu_style();
-        let panel = title_panel("BRATDOG", ctx.window_size);
+        let layout = title_layout("BRATDOG", ctx.window_size, self.title_art.as_ref(), &crate::constants::TITLE_MENU);
+        draw_title_art(ctx.ui, ctx.window_size, &layout, self.title_art.as_ref());
+        let panel = layout.panel;
         let mut y = panel.begin(ctx.ui, &style);
         for (i, &item) in TITLE_ITEMS.iter().enumerate() {
             y = panel.item(ctx.ui, y, title_label(item), i as u8 == selection, &style);

@@ -8,10 +8,10 @@
 #
 # The startup cards and the engine's window icon, which every game shows, then
 # Bratdog's own art: the two dogs, the three snacks, the kitchen floor and its
-# wall. The quarantined `ai_` prefix stays on the copies: a paid build's
+# wall, and the title art. The quarantined `ai_` prefix stays on the copies: a paid build's
 # check_no_ai_assets.sh gate must still find them until Jesse's cleanup pass.
 #
-# deion_assets a0cbafce9d6d15ee0438b1e195414c24a1e4bab8
+# deion_assets d9ecc155cab2be809b0b37a2c8aca16e85d52143
 ai/branding/be_insiculous/ai_be_insiculous_320x192.png
 ai/branding/insiculous_2d_maxwell/ai_insiculous_2d_maxwell_splash_320x192.png
 ai/branding/insiculous_2d_maxwell/ai_insiculous_2d_maxwell_icon_64x64.png
@@ -22,3 +22,4 @@ ai/topdown/props/bratdog_cheese_bite/ai_bratdog_cheese_bite_32x32.png
 ai/topdown/props/bratdog_bacon_bone/ai_bratdog_bacon_bone_32x32.png
 ai/topdown/tiles/kitchen_floor/ai_kitchen_floor_32x32.png
 ai/topdown/tiles/kitchen_wall/ai_kitchen_wall_16x16.png
+ai/title_screens/bratdog/ai_bratdog_title_480x288.png

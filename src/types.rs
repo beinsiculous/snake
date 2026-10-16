@@ -196,6 +196,8 @@ pub struct SnakeGame {
     /// Food pellets shared by every snake on the board.
     pub(crate) foods: Vec<Food>,
     pub(crate) sheets: Sheets,
+    /// Bratdog's title art over the title menu; `None` keeps the plain centred menu.
+    pub(crate) title_art: Option<TitleArt>,
     /// The kitchen floor's `Tilemap`, under everything.
     pub(crate) floor: Option<EntityId>,
     /// The kitchen wall's `Tilemap`: the ring around the floor, open in the wrap modes.
@@ -229,6 +231,7 @@ impl Default for SnakeGame {
             mode: GameMode::SinglePlayer,
             foods: Vec::new(),
             sheets: Sheets::default(),
+            title_art: None,
             floor: None,
             wall: None,
             backdrop: None,

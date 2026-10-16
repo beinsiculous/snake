@@ -44,10 +44,8 @@ pub(crate) fn title_index(item: TitleItem) -> u8 {
 
 /// Panel layouts shared by the input half (mouse hit-testing here) and the
 /// drawing half (`drawing.rs`) — the geometry must match or clicks land beside
-/// the drawn rows. Titles only affect the label, never the layout.
-pub(crate) fn title_panel(title: &str, window_size: Vec2) -> MenuPanel {
-    MenuPanel::new(title, window_size / 2.0, 380.0, TITLE_ITEMS.len())
-}
+/// the drawn rows. Titles only affect the label, never the layout. The title
+/// screen's own layout is the engine's `title_layout`, shared the same way.
 pub(crate) fn mode_select_panel(title: &str, window_size: Vec2) -> MenuPanel {
     MenuPanel::new(title, window_size / 2.0, 400.0, 4)
 }
@@ -68,7 +66,9 @@ pub(crate) fn mode_hint(mode: ChaosMode) -> &'static str {
 impl SnakeGame {
     pub(crate) fn update_title_input(&mut self, ctx: &mut GameContext, selection: u8) {
         let input = MenuInput::read(ctx.input);
-        let mouse = title_panel("", ctx.window_size).mouse_select(ctx.input);
+        let mouse = title_layout("", ctx.window_size, self.title_art.as_ref(), &crate::constants::TITLE_MENU)
+            .panel
+            .mouse_select(ctx.input);
         let selection = mouse.hovered.unwrap_or(selection);
         // An out-of-range stored selection (e.g. the shorter wasm menu)
         // clamps instead of panicking at the dispatch index below.

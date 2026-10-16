@@ -21,6 +21,8 @@ mod menu;
 mod spawning;
 #[cfg(test)]
 mod test_support;
+#[cfg(test)]
+mod title_screen_tests;
 mod types;
 
 #[cfg(target_arch = "wasm32")]
@@ -75,6 +77,7 @@ impl Game for SnakeGame {
 
         let tex = ctx.assets.create_solid_color(1, 1, [255, 255, 255, 255]).unwrap();
         self.sheets.white = tex.id;
+        self.title_art = TitleArt::load(ctx.assets, TITLE_ART);
 
         // Every sheet's path and cell is in `constants.rs`'s sheets block; each PNG and
         // its `.sheet.ron` sidecar is a synced copy under `assets/sprites/`.
