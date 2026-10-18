@@ -3,13 +3,13 @@
 //!
 //! On wasm the `GameConfig` save-path strings are localStorage keys, so
 //! achievements, high scores, and input bindings persist per the
-//! `docs/WEB_SAVES.md` contract (`beinsiculous.games.snake.*` keys, values
+//! `docs/WEB_SAVES.md` contract (`beinsiculous.games.bratdog.*` keys, values
 //! byte-identical to the native save files; the site's achievement board
 //! reads the same keys).
 //!
 //! With `--features editor` the same library builds a SECOND bundle, served at
-//! `/playground/snake/`, that runs this game inside the engine's scene editor.
-//! That bundle writes none of the `beinsiculous.games.snake.*` keys above — an
+//! `/playground/bratdog/`, that runs this game inside the engine's scene editor.
+//! That bundle writes none of the `beinsiculous.games.bratdog.*` keys above — an
 //! editor session must not record achievements, scores or bindings the site's
 //! boards read — and keeps its camera and panel layout in a slot of its own.
 
@@ -33,7 +33,7 @@ use std::path::PathBuf;
 /// 3. the site's `src/content/games/<slug>.md` `wasm:` path,
 /// 4. the deployed dir `insiculous_web/public/games/<slug>/v<N>/`.
 #[cfg(not(feature = "editor"))]
-const ASSET_BASE: &str = "/games/snake/v5/assets";
+const ASSET_BASE: &str = "/games/bratdog/v6/assets";
 
 /// Where the editor bundle serves its assets from; also its VFS key base.
 ///
@@ -79,9 +79,14 @@ pub fn start() {
 #[cfg(not(feature = "editor"))]
 fn run_configured_game() -> Result<(), engine_core::EngineError> {
     let config = crate::game_config(ASSET_BASE)
-        .with_achievement_save_path("beinsiculous.games.snake.achievements")
-        .with_input_settings_path("beinsiculous.games.snake.input")
-        .with_score_save_path("beinsiculous.games.snake.scores");
+        .with_achievement_save_path("beinsiculous.games.bratdog.achievements")
+        .with_input_settings_path("beinsiculous.games.bratdog.input")
+        .with_score_save_path("beinsiculous.games.bratdog.scores")
+        // The keys this game saved under before its rename: read at boot and folded
+        // in, never written, so a player keeps their progress across the rename.
+        .with_former_achievement_save_path("beinsiculous.games.snake.achievements")
+        .with_former_input_settings_path("beinsiculous.games.snake.input")
+        .with_former_score_save_path("beinsiculous.games.snake.scores");
     run_game(crate::SnakeGame::default(), config)
 }
 

@@ -1,6 +1,6 @@
 # Bratdog
 
-Game 4 of the 20 Games Challenge, built on the sibling [`insiculous_2d`](../../insiculous_2d) engine: classic grid Snake, re-skinned into the Deion world as **Bratdog**. You are Frank, a bratwurst dachshund loose in the kitchen, eating snacks and growing longer with every bite, with a deforming grid over the floor, chaos modes, achievements, and a 2-player versus mode where two dogs share one kitchen. (The site still lists it as Insiculous Snake.)
+Game 4 of the 20 Games Challenge, built on the sibling [`insiculous_2d`](../../insiculous_2d) engine: classic grid Snake, re-skinned into the Deion world as **Bratdog**. You are Frank, a bratwurst dachshund loose in the kitchen, eating snacks and growing longer with every bite, with a deforming grid over the floor, chaos modes, achievements, and a 2-player versus mode where two dogs share one kitchen. (The site names it Bratdog, at `/games/bratdog/`; `/games/snake/` redirects there.)
 
 ## Running
 
@@ -10,7 +10,7 @@ cargo run --features editor   # run inside the engine's scene editor
 cargo test                    # 65 headless tests
 ```
 
-The same build runs in the browser at [beinsiculous.com/playground/snake/](https://beinsiculous.com/playground/snake/): the game inside the editor, layout only — the rules are compiled in and nothing you change there persists.
+The same build runs in the browser at [beinsiculous.com/playground/bratdog/](https://beinsiculous.com/playground/bratdog/): the game inside the editor, layout only — the rules are compiled in and nothing you change there persists.
 
 Requires the engine checkout side by side: `../../insiculous_2d` (relative path dependency).
 
