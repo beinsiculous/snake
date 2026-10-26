@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 cargo run                     # play the game
 cargo run --features editor   # run the game inside the engine's scene editor
 cargo build                   # compile check
-cargo test                    # run all 65 tests (headless, finish in well under a second)
+cargo test                    # run all 81 tests (headless, finish in about a second)
 cargo test <test_name>        # run a single test
 ```
 
@@ -18,7 +18,7 @@ The game depends on the `insiculous_2d` engine by relative path (`../../insiculo
 
 This is a single-crate game (`insiculous_snake`), shipped as **Bratdog** — snake re-skinned into the Deion world: Frank the bratwurst dachshund in a kitchen, built on the in-house `insiculous_2d` ECS engine. `SnakeGame` (in `src/types.rs`) implements the engine's `Game` trait in `src/main.rs` — `init()` loads the sheets and spawns the kitchen floor, its wall and the grid backdrop; achievements register in `register_achievements()`, which the engine calls before the window opens; `cargo run -- --achievements-manifest <path>` exports the list; `update()` runs once per frame. With `--features editor` the identical game runs inside the engine's scene editor via `editor_integration::run_game_with_editor`, and at `/playground/bratdog/` in the browser (the same feature, built by the engine's `build_wasm.sh --kind editor` and served from the site); no game code changes between the modes.
 
-**State machine drives everything.** `GameState` (types.rs) is matched at the top of `update()` in main.rs: `TitleScreen` / `ModeSelect` / `Achievements` dispatch to handlers in `menu.rs`; everything else (`Playing`, `GameOver`) falls through to `update_gameplay()` in `gameplay/mod.rs`. Flow is Title (1 Player / 2 Player Versus / Achievements / Exit) → ModeSelect (which is the **chaos-mode** select — the player-count choice already happened on the title) → Playing ↔ GameOver. Match lifecycle (`start_game`, `reset_to_title`) lives in `gameplay/mod.rs`; every frame ends with `update_entity_visibility()` (gameplay sprites are hidden on menu screens) and `draw_ui()` (drawing.rs).
+**State machine drives everything.** `GameState` (types.rs) is matched at the top of `update()` in main.rs: `TitleScreen` / `ModeSelect` / `Achievements` dispatch to handlers in `menu.rs`; everything else (`Playing`, `GameOver`) falls through to `update_gameplay()` in `gameplay/mod.rs`. Flow is Title (1 Player / 2 Player Versus / Achievements / Exit) → ModeSelect (which is the **chaos-mode** select — the player-count choice already happened on the title) → Playing ↔ GameOver. Match lifecycle (`start_game`, `reset_to_title`) lives in `gameplay/mod.rs`, and the song in `src/music.rs` (§ Music); every frame ends with `update_entity_visibility()` (gameplay sprites are hidden on menu screens) and `draw_ui()` (drawing.rs).
 
 **Pure rules / entity wiring split.** All grid rules are plain-data functions in `src/gameplay/rules.rs` — `next_direction`, `step_snake`, `resolve_versus_step`, `versus_result`, `place_food`, `tick_interval`, `food_count`, `walls_wrap`, `versus_spawn`, `starting_body`, and the drawing rules `piece_for` (which of Frank's pieces a body cell shows, wrap seams included), `step_direction` and `snack_for`. No entities, no `GameContext`, fully headless-testable. The `SnakeGame` methods in `gameplay/mod.rs` turn their outcomes into entities, particles, grid ripples, and achievements. Keep new rules on the pure side of this line.
 
@@ -46,7 +46,7 @@ This is a single-crate game (`insiculous_snake`), shipped as **Bratdog** — sna
 
 **Not localized** (unlike Pong/Frogger): all strings are hardcoded English; there is no `assets/locales/`. The assets are `assets/fonts/font.ttf` and the synced sprites under `assets/sprites/`.
 
-**Tests (65)**: `src/gameplay_tests.rs` (37 — direction/buffering, step/grow/death, food placement, chaos rules, versus resolution, the pieces and the wrap seams, the snacks) plus inline `mod tests` in `spawning.rs` (7 — the layout, the ring), `achievements.rs` (5) and `constants.rs` (1 — the startup cards), and `src/flow_tests.rs` (15 — the match through the engine's `GameHarness` over the synced art: every clip the game types is in its sidecar, the maps, the wag on tick frames, the hurt after a right-angle turn into a wall, a versus head-on, the ring per mode, the collect, quitting after a death, the HUD and banner clear of the ring, the depth ladder, fair versus spawns, pellets off playing collects, played-out collects forgotten, a held-back pellet returning). Everything is headless; new rules go into `rules.rs` precisely so they can be tested there.
+**Tests (81)**: `src/gameplay_tests.rs` (37 — direction/buffering, step/grow/death, food placement, chaos rules, versus resolution, the pieces and the wrap seams, the snacks) plus inline `mod tests` in `spawning.rs` (7 — the layout, the ring), `achievements.rs` (5) and `constants.rs` (1 — the startup cards), and `src/flow_tests.rs` (15 — the match through the engine's `GameHarness` over the synced art: every clip the game types is in its sidecar, the maps, the wag on tick frames, the hurt after a right-angle turn into a wall, a versus head-on, the ring per mode, the collect, quitting after a death, the HUD and banner clear of the ring, the depth ladder, fair versus spawns, pellets off playing collects, played-out collects forgotten, a held-back pellet returning), `src/title_screen_tests.rs` (2 — the title art and its menu) and `src/music_tests.rs` (14 — the song through the harness's virtual clock: the sidecar, the committed meter, the moments and their sources, the dogs' lifecycle, the order within a tick, the pause jam, the pulse, the match start's identity rule, the missing bank). Everything is headless; new rules go into `rules.rs` precisely so they can be tested there.
 
 ## Coordinate and scale conventions
 
@@ -66,6 +66,75 @@ Shipped by the art revamp's batch 9 (`coordination/art-revamp/plan.md` at the wo
 - Style SSOT: `deion_assets/DEION_STYLE.md` via the `deion_assets -> ../../deion_assets` symlink. Runtime art arrives ONLY via the sync (`python3 deion_assets/scripts/sync_sprites.py .`, pinned in `assets/sprites/sync.list`) — never symlink or hand-copy art in. AI art is quarantined (`ai_` prefix): it may ship in FREE web builds, never in paid builds; `deion_assets/scripts/check_no_ai_assets.sh` must pass on any paid release's asset tree. Sheet clip names are the stable API.
 
 Still open: **Frank's final name** (a working name, Jesse's to settle), and **the angry meatball** — the roaming hazard, a shared cross-game character, planned as the batch after the re-skin.
+
+## Music (the Tritsch-Tratsch Polka, 2026-10)
+
+Bratdog plays Johann Strauss II's *Tritsch-Tratsch Polka* through the engine's conductor
+(`training.md` § Conductor Pattern in the engine). The game's part is `src/music.rs` — its
+constants, its moments, its counts and its pulse — standing on the engine's `GameMusic`
+(`engine_core::game_music`), which carries the request, the match start's identity rule, the
+jam's latch, the beat and the telemetry. Its tests are `src/music_tests.rs`.
+
+- **The song** is `assets/ai/music/ai_bratdog.mid` and its sidecar: thirty-two bars of 2/4 in A
+  major at 124 BPM, about 31 s, looping on a phrase's downbeat. An agent sequenced it from memory
+  through the composer's command API (`song new`, `song edit …`, `song save
+  ai/music/ai_bratdog.mid`), so it sits under `ai/music` with the `ai_` prefix until a person's
+  pass promotes it; the composer's Save wrote the sidecar and the stanza in
+  `assets/ai/music/LICENSE`. Never hand-edit the sidecar — open the song in the composer (`cargo
+  run --features editor`, File → Open Song) and save it again. The meter is written, not assumed:
+  a song without one is 4/4, and the bar lines and the pulse would fall every four quarters.
+- **The background** — the tuba's oom on each beat, the trombone's pah on each off-beat, the
+  clarinet's counter-line — plays by itself from `init` on, through the menus, under the pause menu
+  and under the game-over panel. A track a part selects plays in no background, so the tune is
+  heard only as the dogs eat.
+- **Five bindings, three source kinds**, every part `Loop` and `quantize: Off` (a quantized trigger
+  in the loop's last beat would be parked on the seam and dropped):
+
+  | binding | moment | part | instrument | source |
+  |---|---|---|---|---|
+  | `snack` | Frank eats (`eat_food`, snake 0) | `romp` (the tune) | accordion | the dog's — its map entity, never the pellet's, which is gone in that call |
+  | `snack_two` | the second dog eats (versus) | `romp` (the tune) | clarinet | the dog's |
+  | `turn` | a heading that changed as a tick applied it (`apply_heading`) | `paws` (one click) | woodblock | the dog's |
+  | `death` | a dog dies (`kill`) | `dirge` (one blat) | trombone | the game's — it rings on whatever the next frame does |
+  | `menu` | a move in the pause menu | `jam` (the counter-line) | accordion | the menu's |
+
+  The two dogs walk **one** tune on two instruments; in solo `snack_two` is never sent. A turn is a
+  changed heading at apply time, never a key: a key for the heading the dog already has, or for
+  its reverse, is dropped by `next_direction` and clicks nothing, and the two-deep buffer clicks
+  once a tick at most.
+- **The dogs' lifecycle**: `destroy_snakes_and_food` despawns the dogs' maps at every `start_game`
+  and `reset_to_title`, so a dog's source ends in that frame's tail and the next match's dog
+  activates on its first turn or snack. A pellet's removal ends nothing.
+- **The order within a tick** is the order the tick runs: the turns (snake 0, then 1), the step,
+  the snacks in index order, then the deaths in index order (`finish_versus`) — so a tick's trace
+  is `turn` → `snack`/`snack_two` → `death`, and a head-on sends `death` twice. A long frame runs
+  whole ticks in order. `Music.triggered`, built only in tests, records the frame's calls.
+- **A match start decides by the song in the slot** (`GameMusic::restart`, from `start_game`, which
+  every match start takes): none → requested again; the game's own → back to its top; another song
+  (the composer's audition in the editor) → left alone.
+- **The pulse**: on each bar line a snack's ripple under each live dog's head, on any other beat a
+  quarter of it (`BEAT_PULSE_FRACTION`; zero is bars only), while Playing and never under the pause
+  menu; a dead dog's head is skipped. It runs after the frame's ticks, so the ripple is under the
+  head the frame draws — never the cell a tick just left, nor the far edge of a wrap.
+- **The pause menu keeps the engine's labels**, and its hint says nothing of the jam: a hint that
+  does overflows the engine's 300 px pause panel (insiculous_2d#202), and the text waits on that.
+  Only the pause menu jams.
+- **No recorded fallback.** A song that cannot play is logged once at `error` ("bratdog: the song
+  could not play: …"), every trigger is refused and counted, and the game is as silent as it was
+  before it had music; each match start asks again.
+- **Telemetry**: every five seconds a `conductor=on …` line with the game's `snacks`, `turns`,
+  `deaths`, `jam_units`, `pulsed` and `refused`, at `info` when asked — `?telemetry=1` on the web
+  page, `BRATDOG_TELEMETRY=1` natively. `init` ends with `bratdog: init complete`, the line the
+  boot measurement stops on.
+- **The bank** is `assets/soundfonts/bratdog.sf2`, FluidR3 GM's accordion (0:21), clarinet (0:71),
+  tuba (0:58), trombone (0:57) and woodblock (0:115), 3.48 MiB, cut by
+  `scripts/prepare_soundfont.sh` — a wrapper over the engine's `scripts/prepare_game_soundfont.sh`
+  with `--bank <path>` for a FluidR3_GM.sf2 got any other way; the source's and the output's
+  sha256s are in the `LICENSE` beside it. Budget: **the bank under 4 MiB** (the engine's script
+  refuses to write one over it), the song under 256 KiB. On the web every asset, the bank
+  included, is fetched before the first frame.
+- The browser bundles moved to **v7** (game) and **v6** (editor) with the music
+  (`src/web_entry.rs` names the four places each version lives).
 
 ## Work tracking
 

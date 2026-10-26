@@ -1,0 +1,105 @@
+(
+    version: 1,
+    soundfont: "soundfonts/bratdog.sf2",
+    looping: true,
+    parts: [
+        (
+            name: "romp",
+            track: Name("melody"),
+            mode: Loop,
+            quantize: Off,
+        ),
+        (
+            name: "paws",
+            track: Name("paws"),
+            mode: Loop,
+            quantize: Off,
+        ),
+        (
+            name: "dirge",
+            track: Name("dirge"),
+            mode: Loop,
+            quantize: Off,
+        ),
+        (
+            name: "jam",
+            track: Name("jam"),
+            mode: Loop,
+            quantize: Off,
+        ),
+    ],
+    instruments: [
+        (
+            name: "accordion",
+            source: SoundFont(
+                path: "soundfonts/bratdog.sf2",
+                bank: 0,
+                preset: 21,
+            ),
+        ),
+        (
+            name: "clarinet",
+            source: SoundFont(
+                path: "soundfonts/bratdog.sf2",
+                bank: 0,
+                preset: 71,
+            ),
+        ),
+        (
+            name: "tuba",
+            source: SoundFont(
+                path: "soundfonts/bratdog.sf2",
+                bank: 0,
+                preset: 58,
+            ),
+        ),
+        (
+            name: "trombone",
+            source: SoundFont(
+                path: "soundfonts/bratdog.sf2",
+                bank: 0,
+                preset: 57,
+            ),
+        ),
+        (
+            name: "woodblock",
+            source: SoundFont(
+                path: "soundfonts/bratdog.sf2",
+                bank: 0,
+                preset: 115,
+            ),
+        ),
+    ],
+    bindings: [
+        (
+            action: "snack",
+            part: "romp",
+            instrument: "accordion",
+        ),
+        (
+            action: "snack_two",
+            part: "romp",
+            instrument: "clarinet",
+        ),
+        (
+            action: "turn",
+            part: "paws",
+            instrument: "woodblock",
+        ),
+        (
+            action: "death",
+            part: "dirge",
+            instrument: "trombone",
+        ),
+        (
+            action: "menu",
+            part: "jam",
+            instrument: "accordion",
+        ),
+    ],
+    provenance: Some((
+        author: "Johann Strauss II, 1858; sequenced by the Opus executor for Be Insiculous, 2026",
+        license: "CC0-1.0",
+    )),
+    midi_fingerprint: Some(1420320369842920485),
+)

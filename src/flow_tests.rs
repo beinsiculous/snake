@@ -8,7 +8,7 @@ use glam::IVec2;
 
 use crate::constants::*;
 use crate::gameplay::{hurt_clip, piece_for, Snack};
-use crate::spawning::{ring_clip, spawn_snack, RING_COLS, RING_ROWS};
+use crate::spawning::{ring_clip, RING_COLS, RING_ROWS};
 use crate::test_support::*;
 use crate::types::*;
 
@@ -178,14 +178,6 @@ fn the_ring_is_open_in_a_wrap_mode_and_closed_otherwise() {
         game.start_game(ctx);
     });
     assert_eq!(side(&harness), (north, corner, ring_tiles), "closed again");
-}
-
-/// Put a snack on `at`, in front of the dog.
-fn lay_snack(harness: &mut GameHarness<SnakeGame>, at: IVec2, snack: Snack) {
-    harness.context(|game, ctx| {
-        let entity = spawn_snack(ctx.world, game.sheets.snack(snack), snack, at);
-        game.foods.push(Food { cell: at, snack, entity });
-    });
 }
 
 #[test]

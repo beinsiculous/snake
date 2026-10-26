@@ -6,12 +6,15 @@
 //! harness: the real frame, with no window.
 
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use engine_core::assets::sprite_sheet::{prepare_sheet, PreparedSheet};
 use engine_core::prelude::*;
 use engine_core::test_support::GameHarness;
 use glam::IVec2;
 
+use crate::gameplay::Snack;
+use crate::spawning::spawn_snack;
 use crate::types::*;
 
 pub(crate) const FRAME: f32 = 1.0 / 60.0;
@@ -64,6 +67,38 @@ pub(crate) fn place_dog(harness: &mut GameHarness<SnakeGame>, index: usize, cell
         snake.input_queue.clear();
         game.retile_dogs(ctx.world);
     });
+}
+
+/// Put a snack on `at`, in front of the dog.
+pub(crate) fn lay_snack(harness: &mut GameHarness<SnakeGame>, at: IVec2, snack: Snack) {
+    harness.context(|game, ctx| {
+        let entity = spawn_snack(ctx.world, game.sheets.snack(snack), snack, at);
+        game.foods.push(Food { cell: at, snack, entity });
+    });
+}
+
+/// Frames with wall time between them, so the song's virtual clock renders blocks and the
+/// conductor drains what the frames sent.
+pub(crate) fn settle(harness: &mut GameHarness<SnakeGame>) {
+    for _ in 0..6 {
+        std::thread::sleep(Duration::from_millis(3));
+        harness.step(FRAME, &[]);
+    }
+}
+
+/// Step with wall time between frames until `done` holds, failing past `limit`.
+pub(crate) fn poll(
+    harness: &mut GameHarness<SnakeGame>,
+    limit: Duration,
+    what: &str,
+    done: impl Fn(&GameHarness<SnakeGame>) -> bool,
+) {
+    let started = Instant::now();
+    while !done(harness) {
+        assert!(started.elapsed() < limit, "{what} within {limit:?}");
+        std::thread::sleep(Duration::from_millis(3));
+        harness.step(FRAME, &[]);
+    }
 }
 
 /// Step until the next grid tick has run, and say how many frames that took.

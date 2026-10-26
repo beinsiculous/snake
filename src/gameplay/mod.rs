@@ -20,7 +20,7 @@ use crate::types::*;
 
 /// Push a radial shockwave into the backdrop grid. The engine applies it to every
 /// backdrop on its next running frame.
-fn ripple_grid(world: &mut World, position: Vec2, strength: f32, radius: f32) {
+pub(crate) fn ripple_grid(world: &mut World, position: Vec2, strength: f32, radius: f32) {
     ripple(world, GridImpulse::Radial { position, strength, radius, attractive: false });
 }
 
@@ -51,9 +51,13 @@ impl SnakeGame {
                 PauseAction::ExitGame => { ctx.request_exit(); return; }
                 // Skip the rest of the frame so the resuming keypress can't
                 // leak into gameplay; the world unfreezes next frame.
-                PauseAction::Resumed => return,
+                PauseAction::Resumed => {
+                    self.music.follow_pause(ctx, false);
+                    return;
+                }
                 PauseAction::Idle => {}
             }
+            self.music.follow_pause(ctx, self.pause.is_active());
             if self.pause.is_active() {
                 return;
             }
@@ -82,6 +86,13 @@ impl SnakeGame {
                 self.tick_timer += tick_interval(self.chaos_mode, self.total_foods_eaten());
                 self.advance(ctx);
             }
+            // The beat's ripple lands under the head this frame draws: after the frame's
+            // ticks, never on the cell a tick just left or the far edge of a wrap. A death
+            // in the ticks leaves `GameOver`, and the frame pulses nothing.
+            if self.state == GameState::Playing {
+                let heads = self.live_heads();
+                self.music.pulse(ctx, &heads);
+            }
         }
 
         // After every tick of the frame: the dogs' maps have one writer.
@@ -100,6 +111,16 @@ impl SnakeGame {
                 retile_dog(map, sheet, &snake.cells, self.play_time, snake.death_time);
             }
         }
+    }
+
+    /// Where each live dog's head is: the beat pulse's anchors. A dead dog's is skipped.
+    fn live_heads(&self) -> Vec<Vec2> {
+        self.snakes
+            .iter()
+            .filter(|snake| snake.alive)
+            .filter_map(|snake| snake.cells.front())
+            .map(|&head| cell_to_world(head))
+            .collect()
     }
 
     /// Combined foods eaten across snakes — drives the shared tick pace.
@@ -153,10 +174,23 @@ impl SnakeGame {
         }
     }
 
+    /// Apply snake `index`'s next buffered turn. A heading that changed is a turn the song
+    /// hears; a key that left the heading as it was is none.
+    fn apply_heading(&mut self, ctx: &mut GameContext, index: usize) -> Direction {
+        let snake = &mut self.snakes[index];
+        let before = snake.direction;
+        let direction = next_direction(before, &mut snake.input_queue);
+        snake.direction = direction;
+        if direction != before {
+            let dog = snake.map;
+            self.music.turn(ctx, dog);
+        }
+        direction
+    }
+
     /// One single-player grid step: apply a buffered turn, move, resolve.
     fn advance_single(&mut self, ctx: &mut GameContext) {
-        let dir = next_direction(self.snakes[0].direction, &mut self.snakes[0].input_queue);
-        self.snakes[0].direction = dir;
+        let dir = self.apply_heading(ctx, 0);
         let food_cells: Vec<IVec2> = self.foods.iter().map(|f| f.cell).collect();
         let outcome = step_snake(
             &mut self.snakes[0].cells, dir, &food_cells, walls_wrap(self.chaos_mode));
@@ -171,9 +205,8 @@ impl SnakeGame {
     /// One versus grid step: both snakes resolve from the pre-step board, then
     /// only the survivors advance. The round ends the first tick anyone dies.
     fn advance_versus(&mut self, ctx: &mut GameContext) {
-        for snake in self.snakes.iter_mut().take(2) {
-            let dir = next_direction(snake.direction, &mut snake.input_queue);
-            snake.direction = dir;
+        for index in 0..self.snakes.len().min(2) {
+            self.apply_heading(ctx, index);
         }
         let food_cells: Vec<IVec2> = self.foods.iter().map(|f| f.cell).collect();
         let wrap = walls_wrap(self.chaos_mode);
@@ -228,6 +261,8 @@ impl SnakeGame {
         }
         self.spawn_missing_food(ctx.world);
         ripple_grid(ctx.world, pos, GRID_IMPULSE_EAT_STRENGTH, GRID_IMPULSE_EAT_RADIUS);
+        let dog = self.snakes[i].map;
+        self.music.snack(ctx, i, dog);
 
         // Achievements are a single-player pursuit; versus rounds skip them.
         if self.mode == GameMode::SinglePlayer {
@@ -293,6 +328,7 @@ impl SnakeGame {
         self.apply_theme(ctx.world);
         self.retile_dogs(ctx.world);
         self.state = GameState::Playing;
+        self.music.restart(ctx);
     }
 
     /// Build a snake: its starting cells and its body map.
@@ -314,6 +350,7 @@ impl SnakeGame {
         let theme = ChaosTheme::for_mode(self.chaos_mode);
         ctx.particles.spawn_burst(head_pos, &effects::death_burst(&theme, self.sheets.white, color));
         ripple_grid(ctx.world, head_pos, GRID_IMPULSE_DEATH_STRENGTH, GRID_IMPULSE_DEATH_RADIUS);
+        self.music.death(ctx);
     }
 
     /// End a single-player run. Entities stay on screen behind the overlay;

@@ -222,6 +222,9 @@ pub struct SnakeGame {
 
     /// F1 toggles magenta collider outlines over the sprites.
     pub(crate) debug_colliders: bool,
+
+    /// The song, its bindings and the beat pulse.
+    pub(crate) music: crate::music::Music,
 }
 
 impl Default for SnakeGame {
@@ -243,6 +246,7 @@ impl Default for SnakeGame {
             frame_count: 0,
             pause: PauseMenu::new(),
             debug_colliders: false,
+            music: crate::music::Music::default(),
         }
     }
 }
