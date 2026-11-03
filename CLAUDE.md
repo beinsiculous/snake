@@ -77,12 +77,14 @@ jam's latch, the beat and the telemetry. Its tests are `src/music_tests.rs`.
 
 - **The song** is `assets/ai/music/ai_bratdog.mid` and its sidecar: thirty-two bars of 2/4 in A
   major at 124 BPM, about 31 s, looping on a phrase's downbeat. An agent sequenced it from memory
-  through the composer's command API (`song new`, `song edit …`, `song save
-  ai/music/ai_bratdog.mid`), so it sits under `ai/music` with the `ai_` prefix until a person's
-  pass promotes it; the composer's Save wrote the sidecar and the stanza in
-  `assets/ai/music/LICENSE`. Never hand-edit the sidecar — open the song in the composer (`cargo
-  run --features editor`, File → Open Song) and save it again. The meter is written, not assumed:
-  a song without one is 4/4, and the bar lines and the pulse would fall every four quarters.
+  through the editor's command API while the editor still composed (`song new`, `song edit …`,
+  `song save ai/music/ai_bratdog.mid`); those score verbs are gone, the score is MIDI Evil's now
+  and the engine's `song` verbs map it. It sits under `ai/music` with the `ai_` prefix until a
+  person's pass promotes it; the Conductor panel's Save wrote the sidecar and the stanza in
+  `assets/ai/music/LICENSE`. Never hand-edit the sidecar — open the song in the Conductor panel
+  (`cargo run --features editor`, File → Open Song...) and save it again. The meter is written,
+  not assumed: a song without one is 4/4, and the bar lines and the pulse would fall every four
+  quarters.
 - **The background** — the tuba's oom on each beat, the trombone's pah on each off-beat, the
   clarinet's counter-line — plays by itself from `init` on, through the menus, under the pause menu
   and under the game-over panel. A track a part selects plays in no background, so the tune is
@@ -111,7 +113,7 @@ jam's latch, the beat and the telemetry. Its tests are `src/music_tests.rs`.
   whole ticks in order. `Music.triggered`, built only in tests, records the frame's calls.
 - **A match start decides by the song in the slot** (`GameMusic::restart`, from `start_game`, which
   every match start takes): none → requested again; the game's own → back to its top; another song
-  (the composer's audition in the editor) → left alone.
+  (the Conductor panel's audition in the editor) → left alone.
 - **The pulse**: on each bar line a snack's ripple under each live dog's head, on any other beat a
   quarter of it (`BEAT_PULSE_FRACTION`; zero is bars only), while Playing and never under the pause
   menu; a dead dog's head is skipped. It runs after the frame's ticks, so the ripple is under the
